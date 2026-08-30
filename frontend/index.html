@@ -57,37 +57,55 @@
 
   <script>
     // Paste your deployed Render backend link here
-    const BACKEND_URL = https://underground-pipeline-inspection-robot.onrender.com;
+    const BACKEND_URL = "https://your-robot-backend.onrender.com";
 
+    // 1. Live Clock & Date Function
     function updateClock() {
       const now = new Date();
-      document.getElementById('liveClock').innerText = now.toLocaleTimeString();
-      document.getElementById('liveDate').innerText = now.toLocaleDateString();
+      const clockEl = document.getElementById('liveClock');
+      const dateEl = document.getElementById('liveDate');
+      if (clockEl) clockEl.innerText = now.toLocaleTimeString();
+      if (dateEl) dateEl.innerText = now.toLocaleDateString();
     }
 
-    function fetchHistory() {
-      fetch(`${BACKEND_URL}/api/rover-history`)
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.getElementById('historyTableBody');
+    // Run clock immediately and every second
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // 2. Fetch History Safely
+    async function fetchHistory() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/rover-history`);
+        if (!res.ok) throw new Error("HTTP error " + res.status);
+        const data = await res.json();
+        const tbody = document.getElementById('historyTableBody');
+        if (tbody) {
           tbody.innerHTML = '';
           data.forEach(row => {
             tbody.innerHTML += `<tr><td><b>${row.id}</b></td><td>${row.date}</td><td>${row.start_time}</td><td>${row.end_time}</td><td>${row.distance}</td><td>${row.max_gas}</td><td><span class="badge-complete">${row.status}</span></td></tr>`;
           });
-        })
-        .catch(err => console.error("Error connecting to backend:", err));
+        }
+      } catch (err) {
+        console.warn("Backend not reached yet, showing fallback table state.", err);
+      }
     }
 
-    window.onload = () => {
-      setInterval(updateClock, 1000);
+    // 3. Setup canvas image on load
+    window.addEventListener('DOMContentLoaded', () => {
       fetchHistory();
       const canvas = document.getElementById('videoCanvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80";
-      img.onload = () => { canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0); };
-    };
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80";
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+        };
+      }
+    });
   </script>
 </body>
 </html>
