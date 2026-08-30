@@ -56,13 +56,17 @@
   </div>
 
   <script>
+    // Paste your deployed Render backend link here
+    const BACKEND_URL = "https://your-robot-backend.onrender.com";
+
     function updateClock() {
       const now = new Date();
       document.getElementById('liveClock').innerText = now.toLocaleTimeString();
       document.getElementById('liveDate').innerText = now.toLocaleDateString();
     }
+
     function fetchHistory() {
-      fetch('http://localhost:5000/api/rover-history')
+      fetch(`${BACKEND_URL}/api/rover-history`)
         .then(res => res.json())
         .then(data => {
           const tbody = document.getElementById('historyTableBody');
@@ -70,8 +74,10 @@
           data.forEach(row => {
             tbody.innerHTML += `<tr><td><b>${row.id}</b></td><td>${row.date}</td><td>${row.start_time}</td><td>${row.end_time}</td><td>${row.distance}</td><td>${row.max_gas}</td><td><span class="badge-complete">${row.status}</span></td></tr>`;
           });
-        });
+        })
+        .catch(err => console.error("Error connecting to backend:", err));
     }
+
     window.onload = () => {
       setInterval(updateClock, 1000);
       fetchHistory();
