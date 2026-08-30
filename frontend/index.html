@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Underground Pipeline Inspection Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f17; --panel-bg: #131b26; --panel-border: #232d3f;
+      --accent-green: #22c55e; --accent-blue: #38bdf8;
+      --text-main: #f1f5f9; --text-muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', monospace, sans-serif; }
+    body { background-color: var(--bg); color: var(--text-main); padding: 15px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border); margin-bottom: 15px; }
+    .dashboard-grid { display: grid; gap: 15px; }
+    .panel { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 15px; position: relative; }
+    .panel-title { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; }
+    .video-viewport { width: 100%; height: 320px; background: #000; border-radius: 6px; border: 1px solid var(--panel-border); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+    .video-viewport canvas { width: 100%; height: 100%; object-fit: cover; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 5px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--panel-border); }
+    th { color: var(--text-muted); background: rgba(0,0,0,0.2); text-transform: uppercase; font-size: 0.75rem; }
+    .badge-complete { color: var(--accent-green); background: rgba(34, 197, 94, 0.15); padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Underground Pipeline Inspection Dashboard</h1>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">Real-Time Data Recording & Inspection History Log</p>
+    </div>
+    <div style="text-align: right;">
+      <div style="font-size: 0.9rem; font-weight: bold; color: var(--accent-blue);" id="liveClock">--:--:-- PM</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);" id="liveDate">YYYY-MM-DD</div>
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    <div class="panel">
+      <div class="panel-title">Inspection Stream Viewport</div>
+      <div class="video-viewport">
+        <canvas id="videoCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Previous Rover Inspection Logs</div>
+      <table>
+        <thead>
+          <tr><th>Run ID</th><th>Date</th><th>Start Time</th><th>End Time</th><th>Distance</th><th>Peak Gas</th><th>Status</th></tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('liveClock').innerText = now.toLocaleTimeString();
+      document.getElementById('liveDate').innerText = now.toLocaleDateString();
+    }
+    function fetchHistory() {
+      fetch('http://localhost:5000/api/rover-history')
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('historyTableBody');
+          tbody.innerHTML = '';
+          data.forEach(row => {
+            tbody.innerHTML += `<tr><td><b>${row.id}</b></td><td>${row.date}</td><td>${row.start_time}</td><td>${row.end_time}</td><td>${row.distance}</td><td>${row.max_gas}</td><td><span class="badge-complete">${row.status}</span></td></tr>`;
+          });
+        });
+    }
+    window.onload = () => {
+      setInterval(updateClock, 1000);
+      fetchHistory();
+      const canvas = document.getElementById('videoCanvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80";
+      img.onload = () => { canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0); };
+    };
+  </script>
+</body>
+</html>
